@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Text Style Generator</title>
+<style>
+  :root{
+    --bg:#0e1116;
+    --panel:#161b22;
+    --panel-2:#1c2330;
+    --border:#2a3341;
+    --text:#e6edf3;
+    --muted:#8b98a9;
+    --accent:#4f8cff;
+    --accent-2:#7c5cff;
+    --ok:#2ecc71;
+    --err:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:
+      radial-gradient(1000px 600px at 10% -10%, #1b2a4a 0%, transparent 60%),
+      radial-gradient(800px 500px at 100% 0%, #2a1b4a 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    padding:32px 18px 60px;
+  }
+  .wrap{max-width:1100px;margin:0 auto}
+
+  header{text-align:center;margin-bottom:28px}
+  h1{
+    margin:0 0 8px;
+    font-size:clamp(24px,4vw,36px);
+    letter-spacing:-.5px;
+    background:linear-gradient(90deg,#7c5cff,#4f8cff,#2ecc71);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .sub{color:var(--muted);font-size:14px;margin:0}
+
+  .searchbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px;
+    margin-bottom:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .searchbar input{
+    flex:1 1 240px;
+    min-width:0;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    color:var(--text);
+    font-size:15px;
+    padding:12px 14px;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .searchbar input:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(79,140,255,.18);
+  }
+  button{
+    font:inherit;
+    cursor:pointer;
+    border:none;
+    border-radius:10px;
+    padding:12px 20px;
+    font-weight:600;
+    color:#fff;
+    background:linear-gradient(135deg,var(--accent-2),var(--accent));
+    transition:transform .1s, filter .15s, opacity .15s;
+  }
+  button:hover{filter:brightness(1.1)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .toolbar input[type="search"]{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:9px;
+    color:var(--text);
+    padding:9px 12px;
+    font-size:13px;
+    outline:none;
+    width:220px;
+  }
+  .toolbar input[type="search"]:focus{border-color:var(--accent)}
+
+  #status{margin:10px 0 20px;font-size:14px;min-height:20px}
+  #status.loading{color:var(--accent)}
+  #status.error{color:var(--err)}
+  #status.ok{color:var(--ok)}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:14px;
+  }
+
+  .card{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px 16px 46px;
+    min-height:104px;
+    overflow:hidden;
+    transition:border-color .15s, transform .15s, background .15s;
+  }
+  .card:hover{
+    border-color:var(--accent);
+    background:var(--panel-2);
+    transform:translateY(-2px);
+  }
+  .card .label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .card .output{
+    font-size:20px;
+    line-height:1.45;
+    word-break:break-word;
+    white-space:pre-wrap;
+    min-height:29px;
+  }
+  .copy{
+    position:absolute;
+    right:10px;
+    bottom:10px;
+    font-size:11px;
+    padding:6px 12px;
+    border-radius:8px;
+    background:var(--panel-2);
+    color:var(--muted);
+    border:1px solid var(--border);
+    font-weight:600;
+    transition:all .15s;
+  }
+  .card:hover .copy{color:var(--text);border-color:var(--accent)}
+  .copy.copied{
+    background:rgba(46,204,113,.15);
+    border-color:var(--ok);
+    color:var(--ok);
+  }
+
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    color:var(--muted);
+    padding:50px 20px;
+    border:1px dashed var(--border);
+    border-radius:14px;
+  }
+
+  /* skeletons */
+  .skeleton{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    height:104px;
+    animation:pulse 1.3s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:.45}50%{opacity:.9}}
+
+  footer{
+    text-align:center;
+    margin-top:34px;
+    font-size:12px;
+    color:var(--muted);
+  }
+  footer a{color:var(--accent);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Text Style Generator</h1>
+    <p class="sub">Type anything and get hundreds of fancy font styles instantly.</p>
+  </header>
+
+  <form class="searchbar" id="form" autocomplete="off">
+    <input id="text" type="text" value="Ramzan" placeholder="Enter your text…" maxlength="60" aria-label="Text to style" />
+    <button id="go" type="submit">Generate Styles</button>
+  </form>
+
+  <div class="toolbar">
+    <span id="count">Ready</span>
+    <input id="filter" type="search" placeholder="Filter styles (e.g. bold, circle…)" aria-label="Filter styles" />
+  </div>
+
+  <div id="status"></div>
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Powered by <a href="https://sityleapi.vercel.app/api/style?text=Ramzan" target="_blank" rel="noopener">sityleapi.vercel.app</a>
+  </footer>
+</div>
+
+<script>
+(function () {
+  const API = "https://sityleapi.vercel.app/api/style";
+
+  const form   = document.getElementById("form");
+  const input  = document.getElementById("text");
+  const goBtn  = document.getElementById("go");
+  const filter = document.getElementById("filter");
+  const grid   = document.getElementById("grid");
+  const status = document.getElementById("status");
+  const count  = document.getElementById("count");
+
+  let styles = [];   // [{name, text}]
+
+  /* ---------- helpers ---------- */
+
+  function setStatus(msg, cls) {
+    status.textContent = msg || "";
+    status.className = cls || "";
+  }
+
+  // The API's exact field names can vary — be tolerant.
+  function normalize(payload) {
+    const list =
+      payload?.data ?? payload?.styles ?? payload?.results ?? payload?.fonts ?? [];
+
+    if (!Array.isArray(list)) return [];
+
+    return list.map(function (item, i) {
+      if (typeof item === "string") {
+        return { name: "Style " + (i + 1), text: item };
+      }
+      const name =
+        item.name ?? item.style ?? item.font ?? item.title ?? item.label ?? "Style " + (i + 1);
+      const text =
+        item.text ?? item.result ?? item.value ?? item.output ?? item.styled ?? item.data ?? "";
+      return { name: String(name), text: String(text) };
+    }).filter(function (s) { return s.text.length > 0; });
+  }
+
+  /* ---------- rendering ---------- */
+
+  function showSkeletons(n) {
+    grid.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement("div");
+      d.className = "skeleton";
+      grid.appendChild(d);
+    }
+  }
+
+  function render() {
+    const q = filter.value.trim().toLowerCase();
+    const visible = q
+      ? styles.filter(function (s) {
+          return s.name.toLowerCase().includes(q) || s.text.toLowerCase().includes(q);
+        })
+      : styles;
+
+    grid.innerHTML = "";
+
+    if (!visible.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = styles.length
+        ? "No styles match “" + filter.value + "”."
+        : "No styles to show yet.";
+      grid.appendChild(empty);
+      count.textContent = styles.length
+        ? visible.length + " of " + styles.length + " styles"
+        : "Ready";
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    visible.forEach(function (s) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const label = document.createElement("div");
+      label.className = "label";
+      label.textContent = s.name;
+
+      const out = document.createElement("div");
+      out.className = "output";
+      out.textContent = s.text;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "copy";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", function () {
+        copyText(s.text, btn);
+      });
+
+      card.append(label, out, btn);
+      frag.appendChild(card);
+    });
+
+    grid.appendChild(frag);
+
+    count.textContent = q
+      ? visible.length + " of " + styles.length + " styles"
+      : styles.length + " styles";
+  }
+
+  /* ---------- clipboard ---------- */
+
+  function copyText(text, btn) {
+    const done = function () {
+      const original = btn.textContent;
+      btn.textContent = "Copied ✓";
+      btn.classList.add("copied");
+      setTimeout(function () {
+        btn.textContent = original;
+        btn.classList.remove("copied");
+      }, 1300);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done).catch(function () {
+        legacyCopy(text) && done();
+      });
+    } else {
+      legacyCopy(text) && done();
+    }
+  }
+
+  function legacyCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  /* ---------- fetching ---------- */
+
+  async function fetchStyles(text) {
+    if (!text.trim()) {
+      setStatus("Please enter some text first.", "error");
+      input.focus();
+      return;
+    }
+
+    goBtn.disabled = true;
+    styles = [];
+    filter.value = "";
+    setStatus("Generating styles…", "loading");
+    showSkeletons(8);
+
+    const controller = new AbortController();
+    const timer = setTimeout(function () { controller.abort(); }, 15000);
+
+    try {
+      const res = await fetch(API + "?text=" + encodeURIComponent(text), {
+        signal: controller.signal,
+        headers: { "Accept": "application/json" }
+      });
+
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        throw new Error("API responded with " + res.status + " " + res.statusText);
+      }
+
+      const payload = await res.json();
+      styles = normalize(payload);
+
+      if (!styles.length) {
+        grid.innerHTML = "";
+        setStatus("The API returned no styles for that text.", "error");
+        return;
+      }
+
+      const total = payload?.total_styles ?? payload?.meta?.total_styles ?? styles.length;
+      const ms = payload?.time_taken_ms ?? payload?.meta?.time_taken_ms ?? payload?.response_time_ms;
+      setStatus(
+        "✓ Generated " + total + " styles" + (ms != null ? " in " + ms + " ms" : "") +
+        " — click any card's Copy button.",
+        "ok"
+      );
+      render();
+
+    } catch (err) {
+      clearTimeout(timer);
+      grid.innerHTML = "";
+
+      const msg = err.name === "AbortError"
+        ? "Request timed out. Check your connection and try again."
+        : err.message || "Something went wrong.";
+
+      setStatus("⚠ " + msg, "error");
+
+      // Explain the most common cause of a failure here.
+      const hint = document.createElement("div");
+      hint.className = "empty";
+      hint.innerHTML =
+        "Could not reach the style API from this page.<br><br>" +
+        "If you opened this file with <code>file://</code>, the browser may be blocking the " +
+        "cross-origin request. Try serving the page over http (e.g. <code>npx serve</code> or " +
+        "<code>python -m http.server</code>), or open the " +
+        '<a href="' + API + "?text=" + encodeURIComponent(input.value || "Ramzan") +
+        '" target="_blank" rel="noopener" style="color:#4f8cff">raw API URL</a> to verify it works.';
+      grid.appendChild(hint);
+
+    } finally {
+      goBtn.disabled = false;
+    }
+  }
+
+  /* ---------- events ---------- */
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    fetchStyles(input.value);
+  });
+
+  let t;
+  filter.addEventListener("input", function () {
+    clearTimeout(t);
+    t = setTimeout(render, 120);
+  });
+
+  // Initial load
+  fetchStyles(input.value);
+})();
+</script>
+</body>
+</html>
